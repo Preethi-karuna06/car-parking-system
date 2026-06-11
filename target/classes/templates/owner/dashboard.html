@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Owner Dashboard</title><link rel="stylesheet" th:href="@{/css/style.css}"/></head>
+<body>
+<nav class="navbar">
+    <a class="brand" th:href="@{/}">🚗 Smart<span>Parking</span></a>
+    <div class="nav-links">
+        <span style="color:#aaa;font-size:14px;">🏢 <span th:text="${user.fullName}"></span></span>
+        <a th:href="@{/logout}" class="btn-logout">Logout</a>
+    </div>
+</nav>
+<div class="layout">
+    <div class="sidebar">
+        <div class="sidebar-section">Menu</div>
+        <div class="sidebar-menu">
+            <a th:href="@{/owner/dashboard}" class="active"><span>📊</span> Dashboard</a>
+            <a th:href="@{/owner/parking}"><span>🅿️</span> My Parking Areas</a>
+            <a th:href="@{/owner/parking/add}"><span>➕</span> Add Parking</a>
+            <a th:href="@{/owner/bookings}"><span>📅</span> Bookings</a>
+        </div>
+    </div>
+    <div class="main-content">
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <h2 class="page-title">Owner Dashboard</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" th:text="${#lists.size(areas)}">0</div>
+                <div class="stat-label">Parking Areas</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-number" th:text="${totalSlots}">0</div>
+                <div class="stat-label">Total Slots</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-number" th:text="${availableSlots}">0</div>
+                <div class="stat-label">Available Slots</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-number">Rs.<span th:text="${revenue}">0</span></div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                My Parking Areas
+                <a th:href="@{/owner/parking/add}" class="btn btn-primary btn-sm">+ Add New</a>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Name</th><th>City</th><th>Slots</th><th>Price/hr</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        <tr th:each="a : ${areas}">
+                            <td><strong th:text="${a.name}"></strong></td>
+                            <td th:text="${a.city}"></td>
+                            <td th:text="${a.availableSlots}+'/'+${a.totalSlots}"></td>
+                            <td th:text="'Rs.' + ${a.pricePerHour}"></td>
+                            <td>
+                                <span class="badge badge-active"           th:if="${a.status.name() == 'ACTIVE'}"           th:text="${a.status}"></span>
+                                <span class="badge badge-inactive"         th:if="${a.status.name() == 'INACTIVE'}"         th:text="${a.status}"></span>
+                                <span class="badge badge-suspended"        th:if="${a.status.name() == 'SUSPENDED'}"        th:text="${a.status}"></span>
+                                <span class="badge badge-pending_approval" th:if="${a.status.name() == 'PENDING_APPROVAL'}" th:text="'Pending Approval'"></span>
+                            </td>
+                            <td>
+                                <form th:if="${a.status.name() == 'ACTIVE' or a.status.name() == 'INACTIVE'}"
+                                      th:action="@{/owner/parking/{id}/toggle(id=${a.id})}" method="post" style="display:inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button class="btn btn-warning btn-sm" th:if="${a.status.name() == 'ACTIVE'}">Deactivate</button>
+                                    <button class="btn btn-success btn-sm" th:if="${a.status.name() == 'INACTIVE'}">Activate</button>
+                                </form>
+                                <a th:href="@{/owner/parking/{id}/reviews(id=${a.id})}" class="btn btn-info btn-sm">Reviews</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(areas)}">
+                            <td colspan="6" style="text-align:center;padding:30px;color:#888;">
+                                No parking areas. <a th:href="@{/owner/parking/add}" style="color:#00d4ff;">Add one</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

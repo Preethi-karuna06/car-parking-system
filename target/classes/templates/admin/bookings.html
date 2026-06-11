@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>All Bookings</title><link rel="stylesheet" th:href="@{/css/style.css}"/></head>
+<body>
+<nav class="navbar"><a class="brand" th:href="@{/}">🚗 Smart<span>Parking</span></a><div class="nav-links"><span style="color:#aaa;">👑 Admin</span><a th:href="@{/logout}" class="btn-logout">Logout</a></div></nav>
+<div class="layout">
+    <div class="sidebar"><div class="sidebar-section">Admin Panel</div><div class="sidebar-menu">
+        <a th:href="@{/admin/dashboard}"><span>📊</span> Dashboard</a>
+        <a th:href="@{/admin/users}"><span>👤</span> Users</a>
+        <a th:href="@{/admin/owners}"><span>🏢</span> Owners</a>
+        <a th:href="@{/admin/parking}"><span>🅿️</span> Parking Areas</a>
+        <a th:href="@{/admin/bookings}" class="active"><span>📅</span> All Bookings</a>
+    </div></div>
+    <div class="main-content">
+        <h2 class="page-title">All Bookings</h2>
+        <div class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Code</th><th>User</th><th>Parking</th><th>Vehicle</th><th>Entry</th><th>Slot</th><th>Amount</th><th>Status</th><th>Payment</th><th>Date</th></tr></thead>
+                    <tbody>
+                        <tr th:each="b : ${bookings}">
+                            <td><strong th:text="${b.bookingCode}"></strong></td>
+                            <td>
+                                <div th:text="${b.user.fullName}" style="font-weight:600;"></div>
+                                <div th:text="${b.user.email}" style="font-size:12px;color:#888;"></div>
+                            </td>
+                            <td>
+                                <div th:text="${b.parkingArea.name}"></div>
+                                <div th:text="${b.parkingArea.city}" style="font-size:12px;color:#888;"></div>
+                            </td>
+                            <td th:text="${b.vehicleNumber}"></td>
+                            <td th:text="${#temporals.format(b.plannedEntryTime,'dd MMM HH:mm')}"></td>
+                            <td th:text="${b.slotNumber}"></td>
+                            <td>
+                                <span th:if="${b.finalAmount != null}" th:text="'Rs.' + ${b.finalAmount}"></span>
+                                <span th:if="${b.finalAmount == null}" th:text="'Rs.' + ${b.estimatedAmount}"></span>
+                            </td>
+                            <td>
+                                <span class="badge badge-pending"   th:if="${b.status.name() == 'PENDING'}"   th:text="${b.status}"></span>
+                                <span class="badge badge-confirmed" th:if="${b.status.name() == 'CONFIRMED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-active"    th:if="${b.status.name() == 'ACTIVE'}"    th:text="${b.status}"></span>
+                                <span class="badge badge-completed" th:if="${b.status.name() == 'COMPLETED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-cancelled" th:if="${b.status.name() == 'CANCELLED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-rejected"  th:if="${b.status.name() == 'REJECTED'}"  th:text="${b.status}"></span>
+                                <span class="badge badge-expired"   th:if="${b.status.name() == 'EXPIRED'}"   th:text="${b.status}"></span>
+                            </td>
+                            <td>
+                                <span class="badge badge-pending"  th:if="${b.paymentStatus.name() == 'PENDING'}"  th:text="${b.paymentStatus}"></span>
+                                <span class="badge badge-active"   th:if="${b.paymentStatus.name() == 'PAID'}"     th:text="${b.paymentStatus}"></span>
+                                <span class="badge badge-rejected" th:if="${b.paymentStatus.name() == 'FAILED'}"   th:text="${b.paymentStatus}"></span>
+                                <span class="badge badge-expired"  th:if="${b.paymentStatus.name() == 'REFUNDED'}" th:text="${b.paymentStatus}"></span>
+                            </td>
+                            <td th:text="${b.createdAt != null} ? ${#temporals.format(b.createdAt,'dd MMM yyyy')} : '-'"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(bookings)}">
+                            <td colspan="10" style="text-align:center;padding:40px;color:#888;">No bookings yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Book Parking</title><link rel="stylesheet" th:href="@{/css/style.css}"/></head>
+<body>
+<nav class="navbar">
+    <a class="brand" th:href="@{/}">🚗 Smart<span>Parking</span></a>
+    <div class="nav-links"><a th:href="@{/user/dashboard}">Dashboard</a><a th:href="@{/logout}" class="btn-logout">Logout</a></div>
+</nav>
+<div class="container" style="max-width:680px;">
+    <h2 class="page-title">Book Parking Slot 🅿️</h2>
+    <div class="card" style="border-left:5px solid #00d4ff;margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+                <h3 style="font-size:20px;margin-bottom:6px;" th:text="${parking.name}"></h3>
+                <p style="color:#888;font-size:14px;" th:text="${parking.address+', '+parking.city}"></p>
+                <p style="margin-top:8px;font-size:14px;"><span style="color:#888;">Available:</span>
+                    <strong th:text="${parking.availableSlots+' slots'}"></strong>
+                    &nbsp;&nbsp;<span style="color:#888;">Types:</span>
+                    <strong th:text="${parking.supportedVehicleTypes}"></strong></p>
+            </div>
+            <div class="price-tag">₹<span th:text="${parking.pricePerHour}"></span><span>/hr</span></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">Booking Details</div>
+        <form action="/user/book" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="parkingAreaId" th:value="${parking.id}"/>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Entry Date &amp; Time *</label>
+                    <input type="datetime-local" name="entryTime" class="form-control" id="entryTime" required/>
+                </div>
+                <div class="form-group">
+                    <label>Exit Date &amp; Time *</label>
+                    <input type="datetime-local" name="exitTime" class="form-control" id="exitTime" required/>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Vehicle Number</label>
+                    <input type="text" name="vehicleNumber" class="form-control"
+                           th:value="${user.vehicleNumber}" th:placeholder="${user.vehicleNumber}"/>
+                </div>
+                <div class="form-group">
+                    <label>Vehicle Type</label>
+                    <select name="vehicleType" class="form-control">
+                        <option value="CAR" th:selected="${user.vehicleType == 'CAR'}">Car</option>
+                        <option value="BIKE" th:selected="${user.vehicleType == 'BIKE'}">Bike</option>
+                        <option value="TRUCK" th:selected="${user.vehicleType == 'TRUCK'}">Truck</option>
+                    </select>
+                </div>
+            </div>
+            <div style="background:#f8f9fa;padding:16px;border-radius:10px;margin-bottom:20px;">
+                <div style="font-size:13px;color:#888;margin-bottom:6px;">Estimated Cost</div>
+                <div style="font-size:24px;font-weight:700;color:#00d4ff;" id="costDisplay">Select times to calculate</div>
+                <div style="font-size:12px;color:#888;margin-top:4px;">Final amount calculated on actual exit</div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;padding:14px;">Confirm Booking →</button>
+            <a th:href="@{/parking/{id}(id=${parking.id})}" style="display:block;text-align:center;margin-top:12px;color:#888;font-size:14px;">← Back</a>
+        </form>
+    </div>
+</div>
+<script th:inline="javascript">
+const price = /*[[${parking.pricePerHour}]]*/0;
+const entry = document.getElementById('entryTime');
+const exit = document.getElementById('exitTime');
+const display = document.getElementById('costDisplay');
+function calc() {
+    if(entry.value && exit.value) {
+        const hrs = (new Date(exit.value) - new Date(entry.value)) / 3600000;
+        if(hrs > 0) { display.textContent = '₹' + (hrs * price).toFixed(2) + ' (' + hrs.toFixed(1) + ' hrs)'; display.style.color='#00d4ff'; }
+        else { display.textContent = 'Exit must be after entry'; display.style.color='#e74c3c'; }
+    }
+}
+entry.addEventListener('change', calc); exit.addEventListener('change', calc);
+</script>
+</body>
+</html>

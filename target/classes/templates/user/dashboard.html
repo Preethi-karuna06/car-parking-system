@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>User Dashboard</title><link rel="stylesheet" th:href="@{/css/style.css}"/></head>
+<body>
+<nav class="navbar">
+    <a class="brand" th:href="@{/}">🚗 Smart<span>Parking</span></a>
+    <div class="nav-links">
+        <span style="color:#aaa;font-size:14px;">👤 <span th:text="${user.fullName}"></span></span>
+        <a th:href="@{/logout}" class="btn-logout">Logout</a>
+    </div>
+</nav>
+<div class="layout">
+    <div class="sidebar">
+        <div class="sidebar-section">Menu</div>
+        <div class="sidebar-menu">
+            <a th:href="@{/user/dashboard}" class="active"><span>📊</span> Dashboard</a>
+            <a th:href="@{/parking/search}"><span>🔍</span> Find Parking</a>
+            <a th:href="@{/user/bookings}"><span>📅</span> My Bookings</a>
+        </div>
+    </div>
+    <div class="main-content">
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <h2 class="page-title">Welcome, <span th:text="${user.fullName}"></span>!</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" th:text="${#lists.size(bookings)}">0</div>
+                <div class="stat-label">Total Bookings</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-number" th:text="${#lists.size(bookings.?[status.name() == 'COMPLETED'])}">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-number" th:text="${#lists.size(bookings.?[status.name() == 'PENDING' or status.name() == 'CONFIRMED' or status.name() == 'ACTIVE'])}">0</div>
+                <div class="stat-label">Active</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-number" th:text="${#lists.size(bookings.?[status.name() == 'CANCELLED'])}">0</div>
+                <div class="stat-label">Cancelled</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                Recent Bookings
+                <a th:href="@{/user/bookings}" class="btn btn-sm btn-info">View All</a>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Code</th><th>Parking</th><th>Date</th><th>Amount</th><th>Status</th><th>Payment</th><th>Action</th></tr></thead>
+                    <tbody>
+                        <tr th:each="b,s : ${bookings}" th:if="${s.index < 5}">
+                            <td><strong th:text="${b.bookingCode}"></strong></td>
+                            <td th:text="${b.parkingArea.name}"></td>
+                            <td th:text="${#temporals.format(b.plannedEntryTime,'dd MMM yyyy')}"></td>
+                            <td>
+                                <span th:if="${b.finalAmount != null}" th:text="'Rs.' + ${b.finalAmount}"></span>
+                                <span th:if="${b.finalAmount == null}" th:text="'Rs.' + ${b.estimatedAmount}"></span>
+                            </td>
+                            <td>
+                                <span class="badge badge-pending"   th:if="${b.status.name() == 'PENDING'}"   th:text="${b.status}"></span>
+                                <span class="badge badge-confirmed" th:if="${b.status.name() == 'CONFIRMED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-active"    th:if="${b.status.name() == 'ACTIVE'}"    th:text="${b.status}"></span>
+                                <span class="badge badge-completed" th:if="${b.status.name() == 'COMPLETED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-cancelled" th:if="${b.status.name() == 'CANCELLED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-rejected"  th:if="${b.status.name() == 'REJECTED'}"  th:text="${b.status}"></span>
+                            </td>
+                            <td>
+                                <span class="badge badge-pending" th:if="${b.paymentStatus.name() == 'PENDING'}" th:text="${b.paymentStatus}"></span>
+                                <span class="badge badge-active"  th:if="${b.paymentStatus.name() == 'PAID'}"    th:text="${b.paymentStatus}"></span>
+                            </td>
+                            <td>
+                                <form th:if="${b.status.name() == 'PENDING' or b.status.name() == 'CONFIRMED'}"
+                                      th:action="@{/user/bookings/{id}/cancel(id=${b.id})}" method="post" style="display:inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button class="btn btn-danger btn-sm" onclick="return confirm('Cancel this booking?')">Cancel</button>
+                                </form>
+                                <form th:if="${b.status.name() == 'COMPLETED' and b.paymentStatus.name() == 'PENDING'}"
+                                      th:action="@{/user/bookings/{id}/pay(id=${b.id})}" method="post" style="display:inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button class="btn btn-success btn-sm">Pay Now</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(bookings)}">
+                            <td colspan="7" style="text-align:center;padding:30px;color:#888;">
+                                No bookings yet. <a th:href="@{/parking/search}" style="color:#00d4ff;">Find parking</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Quick Search</div>
+            <form action="/parking/search" method="get" style="display:flex;gap:12px;">
+                <input type="text" name="city" class="form-control" placeholder="Enter city name..."/>
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

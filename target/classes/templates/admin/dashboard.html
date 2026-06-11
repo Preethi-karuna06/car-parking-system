@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<nav class="navbar">
+    <a class="brand" th:href="@{/}">🚗 Smart<span>Parking</span></a>
+    <div class="nav-links">
+        <span style="color:#aaa;">👑 Admin</span>
+        <a th:href="@{/logout}" class="btn-logout">Logout</a>
+    </div>
+</nav>
+
+<div class="layout">
+    <div class="sidebar">
+        <div class="sidebar-section">Admin Panel</div>
+        <div class="sidebar-menu">
+            <a th:href="@{/admin/dashboard}" class="active"><span>📊</span> Dashboard</a>
+            <a th:href="@{/admin/users}"><span>👤</span> Users</a>
+            <a th:href="@{/admin/owners}"><span>🏢</span> Owners</a>
+            <a th:href="@{/admin/parking}"><span>🅿️</span> Parking Areas</a>
+            <a th:href="@{/admin/bookings}"><span>📅</span> All Bookings</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h2 class="page-title">Admin Dashboard 👑</h2>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" th:text="${totalUsers}">0</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-number" th:text="${totalOwners}">0</div>
+                <div class="stat-label">Parking Owners</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-number" th:text="${totalParking}">0</div>
+                <div class="stat-label">Parking Areas</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-number" th:text="${pendingParking}">0</div>
+                <div class="stat-label">Pending Approval</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-number" th:text="${totalBookings}">0</div>
+                <div class="stat-label">Total Bookings</div>
+            </div>
+            <div class="stat-card" style="border-color:#00d4ff;">
+                <div class="stat-number">&#8377;<span th:text="${totalRevenue}">0</span></div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">Quick Actions</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <a th:href="@{/admin/parking}" class="btn btn-warning">Approve Parking</a>
+                <a th:href="@{/admin/users}" class="btn btn-info">Manage Users</a>
+                <a th:href="@{/admin/bookings}" class="btn btn-primary">All Bookings</a>
+            </div>
+        </div>
+
+        <!-- Recent Bookings -->
+        <div class="card">
+            <div class="card-header">Recent Bookings</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>User</th>
+                            <th>Parking</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="b : ${recentBookings}">
+                            <td><strong th:text="${b.bookingCode}"></strong></td>
+                            <td th:text="${b.user.fullName}"></td>
+                            <td th:text="${b.parkingArea.name}"></td>
+                            <td>
+                                <span th:if="${b.finalAmount != null}" th:text="'&#8377;' + ${b.finalAmount}"></span>
+                                <span th:if="${b.finalAmount == null}" th:text="'&#8377;' + ${b.estimatedAmount}"></span>
+                            </td>
+                            <td>
+                                <span class="badge badge-pending" th:if="${b.status.name() == 'PENDING'}" th:text="${b.status}"></span>
+                                <span class="badge badge-confirmed" th:if="${b.status.name() == 'CONFIRMED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-active" th:if="${b.status.name() == 'ACTIVE'}" th:text="${b.status}"></span>
+                                <span class="badge badge-completed" th:if="${b.status.name() == 'COMPLETED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-cancelled" th:if="${b.status.name() == 'CANCELLED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-rejected" th:if="${b.status.name() == 'REJECTED'}" th:text="${b.status}"></span>
+                                <span class="badge badge-expired" th:if="${b.status.name() == 'EXPIRED'}" th:text="${b.status}"></span>
+                            </td>
+                            <td th:text="${b.createdAt != null} ? ${#temporals.format(b.createdAt,'dd MMM yyyy')} : '-'"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(recentBookings)}">
+                            <td colspan="6" style="text-align:center;padding:30px;color:#888;">No bookings yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

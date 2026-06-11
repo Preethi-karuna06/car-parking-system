@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/><title>Search Parking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>#searchMap{height:380px;border-radius:12px;}</style>
+</head>
+<body>
+<nav class="navbar">
+    <a class="brand" th:href="@{/}">🚗 Smart<span>Parking</span></a>
+    <div class="nav-links">
+        <a th:href="@{/parking/search}">Find Parking</a>
+        <span sec:authorize="isAuthenticated()">
+            <a sec:authorize="hasRole('USER')" th:href="@{/user/dashboard}">Dashboard</a>
+            <a sec:authorize="hasRole('OWNER')" th:href="@{/owner/dashboard}">Dashboard</a>
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/dashboard}">Dashboard</a>
+            <a th:href="@{/logout}" class="btn-logout">Logout</a>
+        </span>
+        <span sec:authorize="!isAuthenticated()"><a th:href="@{/login}">Login</a></span>
+    </div>
+</nav>
+<div class="container">
+    <h2 class="page-title">🔍 Find Parking</h2>
+    <div class="card" style="margin-bottom:20px;">
+        <form action="/parking/search" method="get" style="display:flex;gap:12px;align-items:flex-end;">
+            <div class="form-group" style="flex:1;margin-bottom:0;">
+                <label>Search by City</label>
+                <input type="text" name="city" class="form-control" placeholder="e.g. Chennai" th:value="${city}"/>
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a th:href="@{/parking/search}" class="btn btn-info">Show All</a>
+        </form>
+    </div>
+
+    <div class="card" th:if="${not #lists.isEmpty(results)}">
+        <div class="card-header">📍 Map View</div>
+        <div id="searchMap"></div>
+    </div>
+
+    <p style="color:#888;font-size:14px;margin-bottom:16px;" th:text="${#lists.size(results)}+' parking areas found'"></p>
+    <div class="parking-grid">
+        <div th:each="area : ${results}" class="parking-card">
+            <div style="height:160px;overflow:hidden;position:relative;">
+                <img th:src="${area.displayImage}" style="width:100%;height:100%;object-fit:cover;"
+                     onerror="this.src='/images/default-parking.svg'"/>
+                <div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);color:white;padding:3px 10px;border-radius:20px;font-size:12px;"
+                     th:text="${area.availableSlots}+' slots'"></div>
+            </div>
+            <div class="parking-card-header">
+                <h3 th:text="${area.name}"></h3>
+                <p th:text="${area.address+', '+area.city}"></p>
+            </div>
+            <div class="parking-card-body">
+                <div class="parking-info"><span class="label">Vehicle Types</span><span class="value" th:text="${area.supportedVehicleTypes}"></span></div>
+                <div th:if="${area.facilities}" class="parking-info"><span class="label">Facilities</span><span class="value" th:text="${area.facilities}"></span></div>
+                <div class="price-tag">₹<span th:text="${area.pricePerHour}"></span><span>/hour</span></div>
+                <div style="display:flex;gap:8px;">
+                    <a th:href="@{/parking/{id}(id=${area.id})}" class="btn btn-info btn-sm" style="flex:1;">View Details</a>
+                    <a sec:authorize="hasRole('USER')" th:href="@{/user/book/{id}(id=${area.id})}" class="btn btn-primary btn-sm" style="flex:1;">Book Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div th:if="${#lists.isEmpty(results)}" style="text-align:center;padding:60px;color:#888;">
+        <p style="font-size:48px;">🅿️</p><p style="margin-top:15px;font-size:18px;">No parking areas found.</p>
+    </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:inline="javascript" th:if="${not #lists.isEmpty(results)}">
+const areas=[];
+/*[# th:each="a : ${results}" th:if="${a.latitude != null}"]*/
+areas.push({lat:/*[[${a.latitude}]]*/0,lng:/*[[${a.longitude}]]*/0,name:/*[[${a.name}]]*/'',price:/*[[${a.pricePerHour}]]*/0,slots:/*[[${a.availableSlots}]]*/0,id:/*[[${a.id}]]*/0});
+/*[/]*/
+if(areas.length>0){
+    const map=L.map('searchMap').setView([areas[0].lat,areas[0].lng],12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+    areas.forEach(a=>{
+        const ic=L.divIcon({html:'<div style="background:#00d4ff;color:#1a1a2e;padding:5px 10px;border-radius:8px;font-weight:700;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.3);">🅿️ ₹'+a.price+'/hr</div>',className:'',iconAnchor:[0,0]});
+        L.marker([a.lat,a.lng],{icon:ic}).addTo(map).bindPopup('<strong>'+a.name+'</strong><br>'+a.slots+' slots<br><a href="/parking/'+a.id+'">View →</a>');
+    });
+    if(areas.length>1) map.fitBounds(L.latLngBounds(areas.map(a=>[a.lat,a.lng])),{padding:[40,40]});
+}
+</script>
+</body>
+</html>

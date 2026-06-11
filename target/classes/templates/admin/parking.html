@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Manage Parking</title><link rel="stylesheet" th:href="@{/css/style.css}"/></head>
+<body>
+<nav class="navbar"><a class="brand" th:href="@{/}">🚗 Smart<span>Parking</span></a><div class="nav-links"><span style="color:#aaa;">👑 Admin</span><a th:href="@{/logout}" class="btn-logout">Logout</a></div></nav>
+<div class="layout">
+    <div class="sidebar"><div class="sidebar-section">Admin Panel</div><div class="sidebar-menu">
+        <a th:href="@{/admin/dashboard}"><span>📊</span> Dashboard</a>
+        <a th:href="@{/admin/users}"><span>👤</span> Users</a>
+        <a th:href="@{/admin/owners}"><span>🏢</span> Owners</a>
+        <a th:href="@{/admin/parking}" class="active"><span>🅿️</span> Parking Areas</a>
+        <a th:href="@{/admin/bookings}"><span>📅</span> All Bookings</a>
+    </div></div>
+    <div class="main-content">
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <h2 class="page-title">Manage Parking Areas</h2>
+        <div class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>#</th><th>Name</th><th>Owner</th><th>City</th><th>Slots</th><th>Price/hr</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        <tr th:each="a,s : ${areas}">
+                            <td th:text="${s.index+1}"></td>
+                            <td>
+                                <strong th:text="${a.name}"></strong>
+                                <div th:text="${a.address}" style="font-size:12px;color:#888;"></div>
+                            </td>
+                            <td>
+                                <div th:text="${a.owner.fullName}"></div>
+                                <div th:text="${a.owner.phone}" style="font-size:12px;color:#888;"></div>
+                            </td>
+                            <td th:text="${a.city}"></td>
+                            <td th:text="${a.availableSlots}+'/'+${a.totalSlots}"></td>
+                            <td th:text="'Rs.' + ${a.pricePerHour}"></td>
+                            <td>
+                                <span class="badge badge-active"           th:if="${a.status.name() == 'ACTIVE'}"           th:text="${a.status}"></span>
+                                <span class="badge badge-inactive"         th:if="${a.status.name() == 'INACTIVE'}"         th:text="${a.status}"></span>
+                                <span class="badge badge-suspended"        th:if="${a.status.name() == 'SUSPENDED'}"        th:text="${a.status}"></span>
+                                <span class="badge badge-pending_approval" th:if="${a.status.name() == 'PENDING_APPROVAL'}" th:text="'Pending Approval'"></span>
+                            </td>
+                            <td style="white-space:nowrap;">
+                                <form th:if="${a.status.name() == 'PENDING_APPROVAL' or a.status.name() == 'SUSPENDED'}"
+                                      th:action="@{/admin/parking/{id}/approve(id=${a.id})}" method="post" style="display:inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button class="btn btn-success btn-sm">Approve</button>
+                                </form>
+                                <form th:if="${a.status.name() != 'SUSPENDED'}"
+                                      th:action="@{/admin/parking/{id}/suspend(id=${a.id})}" method="post" style="display:inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button class="btn btn-danger btn-sm" onclick="return confirm('Suspend this parking area?')">Suspend</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(areas)}">
+                            <td colspan="8" style="text-align:center;padding:30px;color:#888;">No parking areas yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

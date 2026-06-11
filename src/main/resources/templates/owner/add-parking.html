@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><title>Add Parking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        #pickMap{height:300px;border-radius:10px;margin-bottom:10px;border:2px solid #ddd;}
+        .tab-btns{display:flex;gap:10px;margin-bottom:14px;}
+        .tab-btn{padding:8px 18px;border-radius:8px;border:2px solid #ddd;cursor:pointer;background:white;font-size:14px;font-weight:600;}
+        .tab-btn.active{border-color:#00d4ff;background:#e8faff;color:#00a8cc;}
+        .tab-pane{display:none;} .tab-pane.active{display:block;}
+        .img-preview{max-width:100%;max-height:180px;border-radius:10px;margin-top:10px;display:none;}
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a class="brand" th:href="@{/}">🚗 Smart<span>Parking</span></a>
+    <div class="nav-links"><a th:href="@{/owner/dashboard}">Dashboard</a><a th:href="@{/logout}" class="btn-logout">Logout</a></div>
+</nav>
+<div class="layout">
+    <div class="sidebar"><div class="sidebar-section">Menu</div><div class="sidebar-menu">
+        <a th:href="@{/owner/dashboard}"><span>📊</span> Dashboard</a>
+        <a th:href="@{/owner/parking}"><span>🅿️</span> My Parking Areas</a>
+        <a th:href="@{/owner/parking/add}" class="active"><span>➕</span> Add Parking</a>
+        <a th:href="@{/owner/bookings}"><span>📅</span> Bookings</a>
+    </div></div>
+    <div class="main-content">
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <h2 class="page-title">Add New Parking Area ➕</h2>
+        <div class="card">
+            <form action="/owner/parking/add" method="post" enctype="multipart/form-data">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                <!-- Basic Info -->
+                <div class="card-header">📋 Basic Information</div>
+                <div class="form-group">
+                    <label>Parking Area Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. City Center Parking" required/>
+                </div>
+                <div class="form-group">
+                    <label>Full Address *</label>
+                    <input type="text" name="address" class="form-control" placeholder="Street address" required/>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>City *</label>
+                        <input type="text" name="city" class="form-control" placeholder="Chennai" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>State *</label>
+                        <input type="text" name="state" class="form-control" placeholder="Tamil Nadu" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Pincode</label>
+                        <input type="text" name="pincode" class="form-control" placeholder="600001"/>
+                    </div>
+                </div>
+
+                <!-- Map Picker -->
+                <div style="height:1px;background:#f0f2f5;margin:20px 0;"></div>
+                <div class="card-header">📍 Pick Location on Map</div>
+                <p style="font-size:13px;color:#888;margin-bottom:10px;">Click on the map to set your parking location exactly.</p>
+                <div id="pickMap"></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="number" name="latitude" id="latIn" class="form-control" placeholder="e.g. 13.0827" step="any"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="number" name="longitude" id="lngIn" class="form-control" placeholder="e.g. 80.2707" step="any"/>
+                    </div>
+                </div>
+
+                <!-- Slots & Pricing -->
+                <div style="height:1px;background:#f0f2f5;margin:20px 0;"></div>
+                <div class="card-header">💰 Slot &amp; Pricing</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Total Parking Slots *</label>
+                        <input type="number" name="totalSlots" class="form-control" placeholder="e.g. 50" min="1" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Price Per Hour (₹) *</label>
+                        <input type="number" name="pricePerHour" class="form-control" placeholder="e.g. 30" min="1" step="0.5" required/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Supported Vehicle Types *</label>
+                    <select name="supportedVehicleTypes" class="form-control" required>
+                        <option value="CAR">Car Only</option>
+                        <option value="BIKE">Bike Only</option>
+                        <option value="CAR,BIKE">Car &amp; Bike</option>
+                        <option value="CAR,BIKE,TRUCK">Car, Bike &amp; Truck</option>
+                        <option value="TRUCK">Truck Only</option>
+                    </select>
+                </div>
+
+                <!-- Image Upload -->
+                <div style="height:1px;background:#f0f2f5;margin:20px 0;"></div>
+                <div class="card-header">🖼️ Parking Area Image</div>
+                <div class="tab-btns">
+                    <button type="button" class="tab-btn active" onclick="switchTab('upload',this)">📁 Upload File</button>
+                    <button type="button" class="tab-btn" onclick="switchTab('url',this)">🔗 Image URL</button>
+                </div>
+                <div id="tab-upload" class="tab-pane active">
+                    <div class="form-group">
+                        <label>Upload Image (JPG/PNG, max 5MB)</label>
+                        <input type="file" name="imageFile" class="form-control" accept="image/*" onchange="previewFile(this)"/>
+                        <img id="filePreview" class="img-preview" alt="Preview"/>
+                    </div>
+                </div>
+                <div id="tab-url" class="tab-pane">
+                    <div class="form-group">
+                        <label>Paste Image URL</label>
+                        <input type="text" name="imageUrl" class="form-control"
+                               placeholder="https://example.com/parking.jpg" oninput="previewUrl(this.value)"/>
+                        <img id="urlPreview" class="img-preview" alt="URL Preview"/>
+                    </div>
+                </div>
+
+                <!-- Details -->
+                <div style="height:1px;background:#f0f2f5;margin:20px 0;"></div>
+                <div class="card-header">📝 Additional Details</div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Describe your parking area..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Facilities (comma separated)</label>
+                    <input type="text" name="facilities" class="form-control" placeholder="e.g. CCTV, 24/7 Security, Covered, EV Charging"/>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-top:10px;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;padding:13px;">Submit for Approval →</button>
+                    <a th:href="@{/owner/parking}" class="btn btn-info" style="padding:13px 20px;">Cancel</a>
+                </div>
+                <p style="font-size:12px;color:#888;margin-top:10px;text-align:center;">Admin will review and approve before it goes live.</p>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Map picker
+    const map = L.map('pickMap').setView([13.0827, 80.2707], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+    let marker = null;
+    map.on('click', e => {
+        const {lat, lng} = e.latlng;
+        document.getElementById('latIn').value = lat.toFixed(6);
+        document.getElementById('lngIn').value = lng.toFixed(6);
+        if(marker) map.removeLayer(marker);
+        marker = L.marker([lat,lng]).addTo(map).bindPopup('Parking Location').openPopup();
+    });
+    document.getElementById('latIn').addEventListener('change', updateMarker);
+    document.getElementById('lngIn').addEventListener('change', updateMarker);
+    function updateMarker() {
+        const lat = parseFloat(document.getElementById('latIn').value);
+        const lng = parseFloat(document.getElementById('lngIn').value);
+        if(!isNaN(lat) && !isNaN(lng)) {
+            if(marker) map.removeLayer(marker);
+            marker = L.marker([lat,lng]).addTo(map);
+            map.setView([lat,lng], 15);
+        }
+    }
+
+    // Tabs
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.getElementById('tab-'+tab).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // Preview
+    function previewFile(input) {
+        const p = document.getElementById('filePreview');
+        if(input.files && input.files[0]) {
+            const r = new FileReader();
+            r.onload = e => { p.src = e.target.result; p.style.display = 'block'; };
+            r.readAsDataURL(input.files[0]);
+        }
+    }
+    function previewUrl(url) {
+        const p = document.getElementById('urlPreview');
+        p.src = url; p.style.display = url ? 'block' : 'none';
+    }
+</script>
+</body>
+</html>

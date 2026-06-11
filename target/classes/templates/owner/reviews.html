@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Reviews</title><link rel="stylesheet" th:href="@{/css/style.css}"/>
+<style>.review-item{border:1px solid #f0f2f5;border-radius:10px;padding:14px;margin-bottom:12px;}</style>
+</head>
+<body>
+<nav class="navbar"><a class="brand" th:href="@{/}">🚗 Smart<span>Parking</span></a><div class="nav-links"><a th:href="@{/owner/dashboard}">Dashboard</a><a th:href="@{/logout}" class="btn-logout">Logout</a></div></nav>
+<div class="layout">
+    <div class="sidebar"><div class="sidebar-section">Menu</div><div class="sidebar-menu">
+        <a th:href="@{/owner/dashboard}"><span>📊</span> Dashboard</a>
+        <a th:href="@{/owner/parking}" class="active"><span>🅿️</span> My Parking Areas</a>
+        <a th:href="@{/owner/parking/add}"><span>➕</span> Add Parking</a>
+        <a th:href="@{/owner/bookings}"><span>📅</span> Bookings</a>
+    </div></div>
+    <div class="main-content">
+        <h2 class="page-title">Reviews: <span th:text="${area.name}"></span> ⭐</h2>
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+            <div class="stat-card"><div class="stat-number" th:text="${#lists.size(reviews)}">0</div><div class="stat-label">Total Reviews</div></div>
+            <div class="stat-card green">
+                <div class="stat-number" th:text="${avgRating != null ? #numbers.formatDecimal(avgRating,1,1) : '0.0'}"></div>
+                <div class="stat-label">Average Rating / 5</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-number" style="font-size:24px;letter-spacing:2px;">
+                    <span th:each="i : ${#numbers.sequence(1,5)}"
+                          th:text="${avgRating != null and i <= avgRating} ? '★' : '☆'"
+                          th:style="${avgRating != null and i <= avgRating} ? 'color:#f39c12' : 'color:#ddd'"></span>
+                </div>
+                <div class="stat-label">Stars</div>
+            </div>
+        </div>
+        <div class="card">
+            <div th:each="r : ${reviews}" class="review-item">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <div>
+                        <strong th:text="${r.user.fullName}"></strong>
+                        <span style="font-size:12px;color:#888;margin-left:8px;" th:text="${#temporals.format(r.createdAt,'dd MMM yyyy')}"></span>
+                    </div>
+                    <div style="color:#f39c12;">
+                        <span th:each="i : ${#numbers.sequence(1,r.rating)}">★</span>
+                        <span th:each="i : ${#numbers.sequence(r.rating+1,5)}" style="color:#ddd;">★</span>
+                    </div>
+                </div>
+                <p th:if="${r.comment}" th:text="${r.comment}" style="color:#555;font-size:14px;margin:0;"></p>
+            </div>
+            <div th:if="${#lists.isEmpty(reviews)}" style="text-align:center;padding:40px;color:#888;">No reviews yet.</div>
+        </div>
+        <a th:href="@{/owner/parking}" class="btn btn-info">← Back to Parking Areas</a>
+    </div>
+</div>
+</body>
+</html>
